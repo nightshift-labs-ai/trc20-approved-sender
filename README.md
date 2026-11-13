@@ -1,6 +1,6 @@
 # TRC20 Approved Sender
 
-A small TRON smart contract for sending TRC20 tokens (USDT or any other TRC20) between wallet addresses, where:
+A small TRON smart contract for sending TRC20 tokens (USDT or other standard TRC20 tokens) between wallet addresses, where:
 
 - only **approved wallets** can send tokens;
 - approved wallets can **approve or remove** other wallets;
@@ -16,20 +16,20 @@ MIT licensed. Written and tested by Nightshift Labs (an AI-agent-run engineering
 | `approveWallet(address wallet)` | approved wallet | Adds a wallet to the approved list. |
 | `removeWallet(address wallet)` | approved wallet | Removes a wallet (also yourself). The **last** approved wallet cannot be removed, so at least one address always stays approved. Make sure you control the wallets you keep. |
 | `send(address token, address to, uint256 amount)` | approved wallet | Sends tokens **held by this contract** to `to`. |
-| `sendBatch(address token, address[] to, uint256[] amounts)` | approved wallet | Several sends in one transaction, all-or-nothing, at most `MAX_BATCH` = 100 recipients (keeps a batch well under TRON's per-transaction CPU limit). |
+| `sendBatch(address token, address[] to, uint256[] amounts)` | approved wallet | Several sends in one transaction, all-or-nothing, at most `MAX_BATCH` = 100 recipients. TRON stops transactions that run too long and still charges the fee limit, so the cap keeps each batch small. |
 | `sendFromSelf(address token, address to, uint256 amount)` | approved wallet | Sends the **caller's own** tokens (after `approve(contract, amount)` on the token). It can never touch another wallet's allowance. |
 | `sendTRX(address to, uint256 amountSun)` | approved wallet | Sends TRX that ended up in the contract (TRX can arrive with a plain transfer even though the contract has no payable function). |
 | `isApproved(address)`, `approvedCount()`, `approvedWallets()`, `tokenBalance(address token)` | anyone | Read-only views (`approvedWallets()` returns the full list). |
 
 To fund the contract, send TRC20 tokens to its address with a normal transfer.
 
-Events: `WalletApproved`, `WalletRemoved`, `Sent`, `SentFromSelf` (indexed for Tronscan / your backend). The `amount` in `Sent`/`SentFromSelf` is what the sender was debited.
+Events: `WalletApproved`, `WalletRemoved`, `Sent`, `SentFromSelf`, `SentTRX` (indexed for Tronscan / your backend). The `amount` in `Sent`/`SentFromSelf` is what the sender was debited.
 
 ## Why the balance check instead of the return value
 
 TRON mainnet USDT (`TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t`) returns `false` from `transfer()` even when the transfer succeeds: in its verified source on Tronscan, `transfer()` in `StandardTokenWithFees` has no `return` statement (`transferFrom()` does return `true`). The LI.FI team describes the same problem in lifinance/contracts PR #1715. This is different from Ethereum USDT, which returns nothing. Contracts that require `true` (for example OpenZeppelin's `SafeERC20.safeTransfer`) reject every USDT `transfer` on TRON. This contract ignores the return value and checks that its own (or the caller's) balance went down by exactly `amount`. A token that reverts, or that reports success without moving funds, makes the call revert.
 
-Tests cover a USDT-style token that returns `false` (on `transfer` and on `transferFrom`), a token with no return value, a token that reports success without moving funds, one that takes more than asked, one whose sender balance goes up, and a token that tries to re-enter `send`, `sendBatch` and `sendFromSelf`.
+Tests cover a USDT-style token that returns `false` (on `transfer` and on `transferFrom`), a token with no return value, a token that reports success without moving funds, one that takes more than asked, one whose sender balance goes up, a token that tries to re-enter `send`, `sendBatch` and `sendFromSelf`, and a TRX receiver that tries to re-enter `sendTRX`.
 
 **Supported tokens:** standard TRC20 and USDT-style tokens. **Not supported** (the call reverts, no funds move): rebasing, reflection and sender-pays-fee tokens, because the sender's balance does not drop by exactly `amount`.
 
