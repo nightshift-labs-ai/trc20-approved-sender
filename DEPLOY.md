@@ -18,7 +18,7 @@ You deploy from your own wallet. Nobody else needs your private key or seed phra
 
 ## 3. Use it
 
-- **Fund the contract:** send USDT (or any TRC20) to the contract address with a normal transfer.
+- **Fund the contract:** send USDT (or another standard TRC20) to the contract address with a normal transfer.
 - **Amounts are in the token's smallest unit.** USDT has 6 decimals: 1 USDT = `1000000`, 25.5 USDT = `25500000`.
 - `send(token, to, amount)`: token = the TRC20 contract address (mainnet USDT is `TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t`).
 - `sendFromSelf(token, to, amount)`: first call `approve(<ApprovedSender address>, amount)` on the token contract from the same wallet.
@@ -27,7 +27,7 @@ You deploy from your own wallet. Nobody else needs your private key or seed phra
 
 ## 4. Mainnet
 
-Repeat step 2 with TronLink on **Mainnet**. Then verify the source on Tronscan (contract page → Contract → Verify and Publish) with the same compiler version and optimizer settings, so anyone can read the code.
+Repeat step 2 with TronLink on **Mainnet**. Then verify the source on Tronscan (contract page → Contract → Verify and Publish) with the same compiler version, optimizer settings (on, 200 runs) and EVM version you deployed with, so anyone can read the code.
 
 ## Energy costs (approximate, from simulations on TRON, Nov 2026)
 
